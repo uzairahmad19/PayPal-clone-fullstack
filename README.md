@@ -8,7 +8,8 @@ The system follows a microservices pattern with an **API Gateway** as the single
 
 
 
-[Image of a microservices architecture diagram]
+<img width="1493" height="1373" alt="microservice" src="https://github.com/user-attachments/assets/7e3b0ae2-be14-4f46-941f-ee7166f1ebca" />
+
 
 
 ---
