@@ -1,4 +1,4 @@
-# render.yaml - FINAL CORRECTED VERSION (Using Docker)
+# render.yaml - FINAL CORRECTED VERSION (Docker with correct syntax)
 
 databases:
   - name: payclone-db
@@ -10,21 +10,23 @@ services:
   # 1. Service Discovery (Eureka)
   - type: web
     name: service-discovery
-    runtime: docker # Use Docker runtime
-    dockerfilePath: ./backend/Dockerfile # Path to the Dockerfile
-    dockerContext: . # Build context is the repo root
-    dockerBuildArgs:
-      SERVICE_PATH: service-discovery # Build argument for this service
+    runtime: docker
+    docker:
+      filePath: ./backend/Dockerfile
+      context: .
+      buildArgs:
+        SERVICE_PATH: service-discovery
     plan: free
     
   # 2. User Service
   - type: web
     name: user-service
     runtime: docker
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: .
-    dockerBuildArgs:
-      SERVICE_PATH: user-service
+    docker:
+      filePath: ./backend/Dockerfile
+      context: .
+      buildArgs:
+        SERVICE_PATH: user-service
     plan: free
     envVars:
       - key: SPRING_DATASOURCE_URL
@@ -40,10 +42,11 @@ services:
   - type: web
     name: wallet-service
     runtime: docker
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: .
-    dockerBuildArgs:
-      SERVICE_PATH: wallet-service
+    docker:
+      filePath: ./backend/Dockerfile
+      context: .
+      buildArgs:
+        SERVICE_PATH: wallet-service
     plan: free
     envVars:
       - key: SPRING_DATASOURCE_URL
@@ -59,10 +62,11 @@ services:
   - type: web
     name: transaction-service
     runtime: docker
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: .
-    dockerBuildArgs:
-      SERVICE_PATH: transaction-service
+    docker:
+      filePath: ./backend/Dockerfile
+      context: .
+      buildArgs:
+        SERVICE_PATH: transaction-service
     plan: free
     envVars:
       - key: SPRING_DATASOURCE_URL
@@ -78,10 +82,11 @@ services:
   - type: web
     name: notification-service
     runtime: docker
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: .
-    dockerBuildArgs:
-      SERVICE_PATH: notification-service
+    docker:
+      filePath: ./backend/Dockerfile
+      context: .
+      buildArgs:
+        SERVICE_PATH: notification-service
     plan: free
     envVars:
       - key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
@@ -91,10 +96,11 @@ services:
   - type: web
     name: api-gateway
     runtime: docker
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: .
-    dockerBuildArgs:
-      SERVICE_PATH: api-gateway
+    docker:
+      filePath: ./backend/Dockerfile
+      context: .
+      buildArgs:
+        SERVICE_PATH: api-gateway
     plan: free
     envVars:
       - key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
