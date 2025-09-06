@@ -1,4 +1,4 @@
-# render.yaml - FINAL CORRECTED VERSION
+# render.yaml - FINAL CORRECTED VERSION (v2)
 
 databases:
   - name: payclone-db
@@ -11,22 +11,25 @@ services:
   - type: web
     name: service-discovery
     runtime: java
-    javaVersion: 17
     rootDir: backend/service-discovery
     buildCommand: "./mvnw clean package -Dmaven.test.skip=true"
     startCommand: "java -jar target/*.jar"
     plan: free
+    envVars:
+      - key: JAVA_VERSION
+        value: 17
     
   # 2. User Service
   - type: web
     name: user-service
     runtime: java
-    javaVersion: 17
     rootDir: backend/user-service
     buildCommand: "./mvnw clean package -Dmaven.test.skip=true"
     startCommand: "java -jar target/*.jar"
     plan: free
     envVars:
+      - key: JAVA_VERSION
+        value: 17
       - key: SPRING_DATASOURCE_URL
         fromDatabase:
           name: payclone-db
@@ -40,12 +43,13 @@ services:
   - type: web
     name: wallet-service
     runtime: java
-    javaVersion: 17
     rootDir: backend/wallet-service
     buildCommand: "./mvnw clean package -Dmaven.test.skip=true"
     startCommand: "java -jar target/*.jar"
     plan: free
     envVars:
+      - key: JAVA_VERSION
+        value: 17
       - key: SPRING_DATASOURCE_URL
         fromDatabase:
           name: payclone-db
@@ -59,12 +63,13 @@ services:
   - type: web
     name: transaction-service
     runtime: java
-    javaVersion: 17
     rootDir: backend/transaction-service
     buildCommand: "./mvnw clean package -Dmaven.test.skip=true"
     startCommand: "java -jar target/*.jar"
     plan: free
     envVars:
+      - key: JAVA_VERSION
+        value: 17
       - key: SPRING_DATASOURCE_URL
         fromDatabase:
           name: payclone-db
@@ -78,12 +83,13 @@ services:
   - type: web
     name: notification-service
     runtime: java
-    javaVersion: 17
     rootDir: backend/notification-service
     buildCommand: "./mvnw clean package -Dmaven.test.skip=true"
     startCommand: "java -jar target/*.jar"
     plan: free
     envVars:
+      - key: JAVA_VERSION
+        value: 17
       - key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
         value: http://service-discovery:8761/eureka/
               
@@ -91,11 +97,12 @@ services:
   - type: web
     name: api-gateway
     runtime: java
-    javaVersion: 17
     rootDir: backend/api-gateway
     buildCommand: "./mvnw clean package -Dmaven.test.skip=true"
     startCommand: "java -jar target/*.jar"
     plan: free
     envVars:
+      - key: JAVA_VERSION
+        value: 17
       - key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
         value: http://service-discovery:8761/eureka/
