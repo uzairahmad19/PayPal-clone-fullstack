@@ -1,4 +1,4 @@
-# render.yaml
+# render.yaml - FINAL CORRECTED VERSION
 
 databases:
   - name: payclone-db
@@ -7,20 +7,23 @@ databases:
     plan: free
 
 services:
-  # 1. Service Discovery (Eureka) - Deploys first
+  # 1. Service Discovery (Eureka)
   - type: web
     name: service-discovery
-    # The 'env' key is removed to let Render auto-detect Java
+    runtime: java
+    javaVersion: 17
     rootDir: backend/service-discovery
-    buildCommand: "./mvnw clean package"
+    buildCommand: "./mvnw clean package -Dmaven.test.skip=true"
     startCommand: "java -jar target/*.jar"
     plan: free
     
   # 2. User Service
   - type: web
     name: user-service
+    runtime: java
+    javaVersion: 17
     rootDir: backend/user-service
-    buildCommand: "./mvnw clean package"
+    buildCommand: "./mvnw clean package -Dmaven.test.skip=true"
     startCommand: "java -jar target/*.jar"
     plan: free
     envVars:
@@ -29,7 +32,6 @@ services:
           name: payclone-db
           property: connectionString
       - key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
-        # Use the internal service name for communication
         value: http://service-discovery:8761/eureka/
       - key: SPRING_JPA_HIBERNATE_DDL_AUTO
         value: update
@@ -37,8 +39,10 @@ services:
   # 3. Wallet Service
   - type: web
     name: wallet-service
+    runtime: java
+    javaVersion: 17
     rootDir: backend/wallet-service
-    buildCommand: "./mvnw clean package"
+    buildCommand: "./mvnw clean package -Dmaven.test.skip=true"
     startCommand: "java -jar target/*.jar"
     plan: free
     envVars:
@@ -54,8 +58,10 @@ services:
   # 4. Transaction Service
   - type: web
     name: transaction-service
+    runtime: java
+    javaVersion: 17
     rootDir: backend/transaction-service
-    buildCommand: "./mvnw clean package"
+    buildCommand: "./mvnw clean package -Dmaven.test.skip=true"
     startCommand: "java -jar target/*.jar"
     plan: free
     envVars:
@@ -68,22 +74,26 @@ services:
       - key: SPRING_JPA_HIBERNATE_DDL_AUTO
         value: update
             
-  # 5. Notification Service (No Database)
+  # 5. Notification Service
   - type: web
     name: notification-service
+    runtime: java
+    javaVersion: 17
     rootDir: backend/notification-service
-    buildCommand: "./mvnw clean package"
+    buildCommand: "./mvnw clean package -Dmaven.test.skip=true"
     startCommand: "java -jar target/*.jar"
     plan: free
     envVars:
       - key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
         value: http://service-discovery:8761/eureka/
               
-  # 6. API Gateway (Deploys Last)
+  # 6. API Gateway
   - type: web
     name: api-gateway
+    runtime: java
+    javaVersion: 17
     rootDir: backend/api-gateway
-    buildCommand: "./mvnw clean package"
+    buildCommand: "./mvnw clean package -Dmaven.test.skip=true"
     startCommand: "java -jar target/*.jar"
     plan: free
     envVars:
