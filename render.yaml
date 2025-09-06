@@ -5,69 +5,48 @@ databases:
     plan: free
 
 services:
-  # 1. Service Discovery (Eureka)
-  - type: docker
+  - type: web
     name: service-discovery
-    docker:
-      filePath: ./backend/Dockerfile
-      context: .
-      buildArgs:
-        SERVICE_PATH: service-discovery
+    dockerfilePath: ./backend/Dockerfile
     plan: free
+    env:
+      SERVICE_PATH: service-discovery
 
-  # 2. User Service
-  - type: docker
+  - type: web
     name: user-service
-    docker:
-      filePath: ./backend/Dockerfile
-      context: .
-      buildArgs:
-        SERVICE_PATH: user-service
+    dockerfilePath: ./backend/Dockerfile
     plan: free
-    envVars:
-      - key: SPRING_DATASOURCE_URL
+    env:
+      SERVICE_PATH: user-service
+      SPRING_DATASOURCE_URL:
         fromDatabase:
           name: payclone-db
           property: connectionString
-      - key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
-        value: http://service-discovery:8761/eureka/
-      - key: SPRING_JPA_HIBERNATE_DDL_AUTO
-        value: update
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-discovery:8761/eureka/
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
 
-  # 3. Wallet Service
-  - type: docker
+  - type: web
     name: wallet-service
-    docker:
-      filePath: ./backend/Dockerfile
-      context: .
-      buildArgs:
-        SERVICE_PATH: wallet-service
+    dockerfilePath: ./backend/Dockerfile
     plan: free
-    envVars:
-      - key: SPRING_DATASOURCE_URL
+    env:
+      SERVICE_PATH: wallet-service
+      SPRING_DATASOURCE_URL:
         fromDatabase:
           name: payclone-db
           property: connectionString
-      - key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
-        value: http://service-discovery:8761/eureka/
-      - key: SPRING_JPA_HIBERNATE_DDL_AUTO
-        value: update
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-discovery:8761/eureka/
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
 
-  # 4. Transaction Service
-  - type: docker
+  - type: web
     name: transaction-service
-    docker:
-      filePath: ./backend/Dockerfile
-      context: .
-      buildArgs:
-        SERVICE_PATH: transaction-service
+    dockerfilePath: ./backend/Dockerfile
     plan: free
-    envVars:
-      - key: SPRING_DATASOURCE_URL
+    env:
+      SERVICE_PATH: transaction-service
+      SPRING_DATASOURCE_URL:
         fromDatabase:
           name: payclone-db
           property: connectionString
-      - key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
-        value: http://service-discovery:8761/eureka/
-      - key: SPRING_JPA_HIBERNATE_DDL_AUTO
-        value: update
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://service-discovery:8761/eureka/
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
