@@ -106,7 +106,7 @@ The system follows a microservices pattern with an **API Gateway** as the single
 <img width="1920" height="905" alt="Screenshot 2025-09-06 204707" src="https://github.com/user-attachments/assets/8f858225-d872-41c4-ba51-b06097f5358e" />
 <img width="1920" height="902" alt="Screenshot 2025-09-06 204715" src="https://github.com/user-attachments/assets/c0b48301-8799-4670-9cbd-b19b99cac1ba" />
 
-
+---
 **Dashboard:**
 
 <img width="1920" height="905" alt="Screenshot 2025-09-06 024156" src="https://github.com/user-attachments/assets/93ff06bc-8b23-48bc-a189-fa05f410c57c" />
@@ -114,32 +114,32 @@ The system follows a microservices pattern with an **API Gateway** as the single
 <img width="1920" height="905" alt="Screenshot 2025-09-06 024225" src="https://github.com/user-attachments/assets/813cd28c-f97f-4829-9270-311a2ecc2855" />
 <img width="1920" height="905" alt="Screenshot 2025-09-06 024235" src="https://github.com/user-attachments/assets/cce01329-3229-4fef-8327-c8d78ec31f92" />
 
-
+---
 **Send Money:**
 
 <img width="1920" height="902" alt="Screenshot 2025-09-06 024247" src="https://github.com/user-attachments/assets/d36e63c4-fc3e-4236-937f-0989b60b0144" />
 
-
+---
 **Add Money:**
 
 <img width="1920" height="902" alt="Screenshot 2025-09-06 024332" src="https://github.com/user-attachments/assets/353bc3b0-d155-4fc0-a220-a48f62c8697d" />
 
-
+---
 **Notification:**
 
 <img width="611" height="905" alt="Screenshot 2025-09-06 024313" src="https://github.com/user-attachments/assets/15efd83d-b030-4784-8ad3-e92e8c6d9f48" />
 
-
+---
 **Transaction History Page:**
 
 <img width="1920" height="912" alt="Screenshot 2025-09-06 024344" src="https://github.com/user-attachments/assets/34f97ece-8f5d-4b81-bc6c-64f7d6f7c245" />
 
-
+---
 **Money Request Page:**
 
 <img width="1920" height="908" alt="Screenshot 2025-09-06 024407" src="https://github.com/user-attachments/assets/dac08ccf-1a2a-4acb-8f6a-ea87e6e02cd5" />
 
-
-**Profile Page**
+---
+**Profile Page:**
 <img width="1920" height="902" alt="Screenshot 2025-09-06 024418" src="https://github.com/user-attachments/assets/3787909a-3638-41a4-b21b-5829cc503234" />
 
