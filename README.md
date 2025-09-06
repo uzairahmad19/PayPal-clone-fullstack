@@ -141,5 +141,6 @@ The system follows a microservices pattern with an **API Gateway** as the single
 
 ---
 **Profile Page:**
+
 <img width="1920" height="902" alt="Screenshot 2025-09-06 024418" src="https://github.com/user-attachments/assets/3787909a-3638-41a4-b21b-5829cc503234" />
 
