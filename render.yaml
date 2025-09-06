@@ -1,5 +1,3 @@
-# render.yaml - FINAL CORRECTED VERSION (Docker with correct syntax)
-
 databases:
   - name: payclone-db
     databaseName: payclone
@@ -8,20 +6,18 @@ databases:
 
 services:
   # 1. Service Discovery (Eureka)
-  - type: web
+  - type: docker
     name: service-discovery
-    runtime: docker
     docker:
       filePath: ./backend/Dockerfile
       context: .
       buildArgs:
         SERVICE_PATH: service-discovery
     plan: free
-    
+
   # 2. User Service
-  - type: web
+  - type: docker
     name: user-service
-    runtime: docker
     docker:
       filePath: ./backend/Dockerfile
       context: .
@@ -37,11 +33,10 @@ services:
         value: http://service-discovery:8761/eureka/
       - key: SPRING_JPA_HIBERNATE_DDL_AUTO
         value: update
-            
+
   # 3. Wallet Service
-  - type: web
+  - type: docker
     name: wallet-service
-    runtime: docker
     docker:
       filePath: ./backend/Dockerfile
       context: .
@@ -57,11 +52,10 @@ services:
         value: http://service-discovery:8761/eureka/
       - key: SPRING_JPA_HIBERNATE_DDL_AUTO
         value: update
-            
+
   # 4. Transaction Service
-  - type: web
+  - type: docker
     name: transaction-service
-    runtime: docker
     docker:
       filePath: ./backend/Dockerfile
       context: .
@@ -77,31 +71,3 @@ services:
         value: http://service-discovery:8761/eureka/
       - key: SPRING_JPA_HIBERNATE_DDL_AUTO
         value: update
-            
-  # 5. Notification Service
-  - type: web
-    name: notification-service
-    runtime: docker
-    docker:
-      filePath: ./backend/Dockerfile
-      context: .
-      buildArgs:
-        SERVICE_PATH: notification-service
-    plan: free
-    envVars:
-      - key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
-        value: http://service-discovery:8761/eureka/
-              
-  # 6. API Gateway
-  - type: web
-    name: api-gateway
-    runtime: docker
-    docker:
-      filePath: ./backend/Dockerfile
-      context: .
-      buildArgs:
-        SERVICE_PATH: api-gateway
-    plan: free
-    envVars:
-      - key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
-        value: http://service-discovery:8761/eureka/
