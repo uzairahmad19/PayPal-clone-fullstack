@@ -1,0 +1,110 @@
+# render.yaml - Defines the entire backend stack for Render
+
+databases:
+  - name: payclone-db
+    databaseName: payclone
+    user: payclone_user
+    plan: free
+
+services:
+  # 1. Service Discovery (Eureka) - Deploys first
+  - type: web
+    name: service-discovery
+    env: java
+    rootDir: backend/service-discovery
+    buildCommand: "./mvnw clean package"
+    startCommand: "java -jar target/*.jar"
+    plan: free
+
+  # 2. User Service
+  - type: web
+    name: user-service
+    env: java
+    rootDir: backend/user-service
+    buildCommand: "./mvnw clean package"
+    startCommand: "java -jar target/*.jar"
+    plan: free
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: payclone-db
+          property: connectionString
+      - key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+        fromService:
+          type: web
+          name: service-discovery
+          property: url
+      - key: SPRING_JPA_HIBERNATE_DDL_AUTO
+        value: update
+
+  # 3. Wallet Service
+  - type: web
+    name: wallet-service
+    env: java
+    rootDir: backend/wallet-service
+    buildCommand: "./mvnw clean package"
+    startCommand: "java -jar target/*.jar"
+    plan: free
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: payclone-db
+          property: connectionString
+      - key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+        fromService:
+          type: web
+          name: service-discovery
+          property: url
+      - key: SPRING_JPA_HIBERNATE_DDL_AUTO
+        value: update
+
+  # 4. Transaction Service
+  - type: web
+    name: transaction-service
+    env: java
+    rootDir: backend/transaction-service
+    buildCommand: "./mvnw clean package"
+    startCommand: "java -jar target/*.jar"
+    plan: free
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: payclone-db
+          property: connectionString
+      - key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+        fromService:
+          type: web
+          name: service-discovery
+          property: url
+      - key: SPRING_JPA_HIBERNATE_DDL_AUTO
+        value: update
+
+  # 5. Notification Service (No Database)
+  - type: web
+    name: notification-service
+    env: java
+    rootDir: backend/notification-service
+    buildCommand: "./mvnw clean package"
+    startCommand: "java -jar target/*.jar"
+    plan: free
+    envVars:
+      - key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+        fromService:
+          type: web
+          name: service-discovery
+          property: url
+
+  # 6. API Gateway (Deploys Last)
+  - type: web
+    name: api-gateway
+    env: java
+    rootDir: backend/api-gateway
+    buildCommand: "./mvnw clean package"
+    startCommand: "java -jar target/*.jar"
+    plan: free
+    envVars:
+      - key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+        fromService:
+          type: web
+          name: service-discovery
+          property: url
