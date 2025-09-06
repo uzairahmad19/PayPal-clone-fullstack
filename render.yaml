@@ -1,4 +1,4 @@
-# render.yaml - FINAL CORRECTED VERSION v3
+# render.yaml - FINAL CORRECTED VERSION (Using Docker)
 
 databases:
   - name: payclone-db
@@ -10,24 +10,23 @@ services:
   # 1. Service Discovery (Eureka)
   - type: web
     name: service-discovery
-    rootDir: backend/service-discovery
-    buildCommand: "./mvnw clean package -Dmaven.test.skip=true"
-    startCommand: "java -jar target/*.jar"
+    runtime: docker # Use Docker runtime
+    dockerfilePath: ./backend/Dockerfile # Path to the Dockerfile
+    dockerContext: . # Build context is the repo root
+    dockerBuildArgs:
+      SERVICE_PATH: service-discovery # Build argument for this service
     plan: free
-    envVars:
-      - key: JAVA_VERSION
-        value: 17
     
   # 2. User Service
   - type: web
     name: user-service
-    rootDir: backend/user-service
-    buildCommand: "./mvnw clean package -Dmaven.test.skip=true"
-    startCommand: "java -jar target/*.jar"
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    dockerBuildArgs:
+      SERVICE_PATH: user-service
     plan: free
     envVars:
-      - key: JAVA_VERSION
-        value: 17
       - key: SPRING_DATASOURCE_URL
         fromDatabase:
           name: payclone-db
@@ -40,13 +39,13 @@ services:
   # 3. Wallet Service
   - type: web
     name: wallet-service
-    rootDir: backend/wallet-service
-    buildCommand: "./mvnw clean package -Dmaven.test.skip=true"
-    startCommand: "java -jar target/*.jar"
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    dockerBuildArgs:
+      SERVICE_PATH: wallet-service
     plan: free
     envVars:
-      - key: JAVA_VERSION
-        value: 17
       - key: SPRING_DATASOURCE_URL
         fromDatabase:
           name: payclone-db
@@ -59,13 +58,13 @@ services:
   # 4. Transaction Service
   - type: web
     name: transaction-service
-    rootDir: backend/transaction-service
-    buildCommand: "./mvnw clean package -Dmaven.test.skip=true"
-    startCommand: "java -jar target/*.jar"
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    dockerBuildArgs:
+      SERVICE_PATH: transaction-service
     plan: free
     envVars:
-      - key: JAVA_VERSION
-        value: 17
       - key: SPRING_DATASOURCE_URL
         fromDatabase:
           name: payclone-db
@@ -78,25 +77,25 @@ services:
   # 5. Notification Service
   - type: web
     name: notification-service
-    rootDir: backend/notification-service
-    buildCommand: "./mvnw clean package -Dmaven.test.skip=true"
-    startCommand: "java -jar target/*.jar"
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    dockerBuildArgs:
+      SERVICE_PATH: notification-service
     plan: free
     envVars:
-      - key: JAVA_VERSION
-        value: 17
       - key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
         value: http://service-discovery:8761/eureka/
               
   # 6. API Gateway
   - type: web
     name: api-gateway
-    rootDir: backend/api-gateway
-    buildCommand: "./mvnw clean package -Dmaven.test.skip=true"
-    startCommand: "java -jar target/*.jar"
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    dockerBuildArgs:
+      SERVICE_PATH: api-gateway
     plan: free
     envVars:
-      - key: JAVA_VERSION
-        value: 17
       - key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
         value: http://service-discovery:8761/eureka/
