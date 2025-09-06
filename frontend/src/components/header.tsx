@@ -1,11 +1,12 @@
 "use client"
 
 import type * as React from "react"
+import { usePathname } from "next/navigation";
 import { User2 } from "lucide-react"
-import { MobileSidebarToggle } from "@/components/mobile-sidebar-toggle"
 import { NotificationsDropdown } from "@/components/notification-dropdown"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { Notification } from "@/types" // Import from your types file
+
+import { Notification } from "@/types"
+import { Separator } from "./ui/separator";
 
 interface HeaderProps {
   userName?: string
@@ -13,7 +14,7 @@ interface HeaderProps {
   notifications?: Notification[]
   onMarkAllNotificationsAsRead?: () => void
   onMarkAsRead?: (id: number) => void
-  onDeleteNotification?: (id: number) => void // Optional delete functionality
+  onDeleteNotification?: (id: number) => void
   className?: string
   fixed?: boolean
   unreadCount: number;
@@ -30,21 +31,27 @@ export function Header({
   fixed = true,
   unreadCount,
 }: HeaderProps) {
-  const baseClasses = "flex h-16 items-center gap-4 border-b bg-card px-6 lg:h-[72px] shadow-sm z-50"
-  // For dashboard pages with sidebar, header should start after sidebar (250px width)
-  // For landing page, header should span full width
+  const pathname = usePathname();
+  const pageTitle = pathname.split('/').pop()?.replace(/-/g, ' ') || 'Dashboard';
+  
+  const baseClasses = "flex h-16 items-center justify-between gap-4 border-b bg-card px-6 lg:h-[72px] shadow-sm z-30"
+  
   const fixedClasses = fixed 
     ? showMobileSidebarToggle 
-      ? "fixed top-0 left-0 right-0 md:left-[250px]" // Dashboard: full width on mobile, starts after sidebar on desktop
-      : "fixed top-0 left-0 right-0" // Landing page: full width
+      ? "fixed top-0 left-0 right-0 md:left-[var(--sidebar-width,250px)]"
+      : "fixed top-0 left-0 right-0"
     : ""
   const headerClasses = `${baseClasses} ${fixedClasses} ${className}`.trim()
 
   return (
     <header className={headerClasses}>
-      {showMobileSidebarToggle && <MobileSidebarToggle />}
+      {/* Left Section */}
+      <div className="flex items-center gap-4">
+        <h1 className="text-xl font-semibold capitalize hidden md:block">{pageTitle}</h1>
+      </div>
       
-      <div className="flex-1 flex items-center justify-end gap-4">
+      {/* Right Section: User Actions */}
+      <div className="flex items-center gap-4">
         {/* User Name and Avatar */}
         {userName && (
           <div className="hidden md:flex items-center gap-2">
@@ -52,6 +59,9 @@ export function Header({
             <span className="font-medium text-foreground">{userName}</span>
           </div>
         )}
+        
+        {/* Separator */}
+        <Separator orientation="vertical" className="h-6 hidden md:block" />
         
         {/* Notifications Dropdown */}
         {onMarkAllNotificationsAsRead && onMarkAsRead && (
@@ -63,10 +73,6 @@ export function Header({
             onDeleteNotification={onDeleteNotification}
           />
         )}
-  
-        
-        {/* Theme Toggle */}
-        <ThemeToggle />
       </div>
     </header>
   )

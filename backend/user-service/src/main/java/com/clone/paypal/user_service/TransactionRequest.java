@@ -7,18 +7,8 @@ public class TransactionRequest {
     private String recipientEmail; // Using email to find the recipient user
     private BigDecimal amount;
     private String description;
+    private String transactionPassword;
 
-    // Constructors
-    public TransactionRequest() {}
-
-    public TransactionRequest(Long senderId, String recipientEmail, BigDecimal amount, String description) {
-        this.senderId = senderId;
-        this.recipientEmail = recipientEmail;
-        this.amount = amount;
-        this.description = description;
-    }
-
-    // Getters and Setters
     public Long getSenderId() {
         return senderId;
     }
@@ -49,5 +39,13 @@ public class TransactionRequest {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getTransactionPassword() {
+        return transactionPassword;
+    }
+
+    public void setTransactionPassword(String transactionPassword) {
+        this.transactionPassword = transactionPassword;
     }
 }

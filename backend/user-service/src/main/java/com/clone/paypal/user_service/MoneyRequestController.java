@@ -35,6 +35,10 @@ public class MoneyRequestController {
         public String message;
     }
 
+    public static class ApproveRequestDto {
+        public String transactionPassword;
+    }
+
     @PostMapping("/create")
     public ResponseEntity<?> createMoneyRequest(@RequestBody CreateMoneyRequestDto requestDto) {
         try {
@@ -72,7 +76,7 @@ public class MoneyRequestController {
     }
 
     @PutMapping("/{id}/approve")
-    public ResponseEntity<?> approveRequest(@PathVariable Long id) {
+    public ResponseEntity<?> approveRequest(@PathVariable Long id, @RequestBody ApproveRequestDto approveDto) {
         try {
             Optional<MoneyRequest> requestOptional = moneyRequestRepository.findById(id);
             if (requestOptional.isPresent()) {
@@ -88,12 +92,13 @@ public class MoneyRequestController {
                     String requesterEmail = requesterOptional.get().getEmail();
 
                     // 2. Create and send the transaction request
-                    TransactionRequest transaction = new TransactionRequest(
-                            request.getRecipientId(), // The person who approves is the sender
-                            requesterEmail,           // The person who requested is the recipient
-                            request.getAmount(),
-                            "Payment for money request: " + request.getMessage()
-                    );
+                    TransactionRequest transaction = new TransactionRequest();
+                    transaction.setSenderId(request.getRecipientId()); // The person who approves is the sender
+                    transaction.setRecipientEmail(requesterEmail);           // The person who requested is the recipient
+                    transaction.setAmount(request.getAmount());
+                    transaction.setTransactionPassword(approveDto.transactionPassword);
+                    transaction.setDescription("Payment for money request: " + request.getMessage());
+
 
                     try {
                         restTemplate.postForObject("http://TRANSACTION-SERVICE/api/transactions", transaction, Map.class);

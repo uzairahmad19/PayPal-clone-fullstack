@@ -6,7 +6,8 @@ public class TransactionRequest {
     private Long senderId;
     private String recipientEmail;
     private BigDecimal amount;
-    private String description; // Add this new field
+    private String description;
+    private String transactionPassword;
 
     public Long getSenderId() {
         return senderId;
@@ -38,5 +39,13 @@ public class TransactionRequest {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getTransactionPassword() {
+        return transactionPassword;
+    }
+
+    public void setTransactionPassword(String transactionPassword) {
+        this.transactionPassword = transactionPassword;
     }
 }

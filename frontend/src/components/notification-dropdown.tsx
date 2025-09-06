@@ -31,14 +31,10 @@ export function NotificationsDropdown({
 
   const getNotificationIcon = (type: string | null | undefined) => {
     switch (type) {
-      case "transaction":
-        return "💰";
-      case "request":
-        return "🤝";
       case "system":
-        return "⚙️";
+        return "💸";
       default:
-        return "🔔";
+        return "💰";
     }
   };
 
@@ -85,14 +81,16 @@ export function NotificationsDropdown({
           <span className="sr-only">View notifications</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-96 p-0">
-        <div className="p-4 border-b">
+      <DropdownMenuContent align="end" className="w-96 p-0 animate-slide-in">
+        <div className="p-4 border-b bg-gradient-to-r from-paypal-primary/5 to-paypal-accent/5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Bell className="h-5 w-5" />
+              <div className="p-2 rounded-full bg-paypal-primary/10">
+                <Bell className="h-4 w-4 text-paypal-primary" />
+              </div>
               <span className="font-semibold">Notifications</span>
               {unreadCount > 0 && (
-                <Badge variant="destructive" className="text-xs">
+                <Badge variant="destructive" className="text-xs animate-pulse">
                   {unreadCount}
                 </Badge>
               )}
@@ -102,7 +100,7 @@ export function NotificationsDropdown({
                 variant="ghost"
                 size="sm"
                 onClick={onMarkAllAsRead}
-                className="h-8 px-2 text-xs flex items-center gap-1"
+                className="h-8 px-2 text-xs flex items-center gap-1 hover:bg-paypal-primary/10 transition-all duration-300"
               >
                 <CheckCheck className="h-3 w-3" />
                 Mark all read
@@ -118,22 +116,28 @@ export function NotificationsDropdown({
                 <div
                   key={notification.id}
                   className={cn(
-                    "group relative rounded-lg p-3 mb-2 border transition-all hover:shadow-sm cursor-pointer",
+                    "group relative rounded-xl p-4 mb-2 border transition-all duration-300 hover:shadow-md cursor-pointer enhanced-card",
                     !notification.read 
-                      ? "bg-blue-50/50 dark:bg-blue-950/20 border-l-4 border-l-blue-500" 
-                      : "hover:bg-accent/50"
+                      ? "bg-gradient-to-r from-blue-50/80 to-paypal-primary/5 dark:from-blue-950/30 dark:to-paypal-primary/10 border-l-4 border-l-paypal-primary shadow-sm" 
+                      : "hover:bg-accent/50 hover:scale-[1.02]"
                   )}
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="text-lg flex-shrink-0 mt-0.5">
+                  <div className="flex items-start gap-4">
+                    <div className="text-2xl flex-shrink-0 mt-0.5 animate-float">
                       {getNotificationIcon(notification.type)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={cn("text-sm leading-relaxed", !notification.read ? "font-medium" : "font-normal")}>
+                      <p className={cn("text-sm leading-relaxed", !notification.read ? "font-semibold text-foreground" : "font-normal text-muted-foreground")}>
                         {notification.message}
                       </p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Badge variant="outline" className="text-xs">
+                      <div className="flex items-center gap-2 mt-3">
+                        <Badge 
+                          variant="outline" 
+                          className={cn(
+                            "text-xs font-medium",
+                            !notification.read ? "bg-paypal-primary/10 text-paypal-primary border-paypal-primary/30" : ""
+                          )}
+                        >
                           {getNotificationTypeLabel(notification.type)}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
@@ -142,15 +146,27 @@ export function NotificationsDropdown({
                       </div>
                     </div>
                     
-                    <div className={cn("flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity", !notification.read && "opacity-100")}>
+                    <div className={cn("flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300", !notification.read && "opacity-100")}>
                       {!notification.read && (
-                        <Button size="sm" variant="ghost" onClick={(e) => handleMarkAsRead(notification.id, e)} className="h-7 w-7 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-100" title="Mark as read">
-                          <Check className="h-3 w-3" />
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={(e) => handleMarkAsRead(notification.id, e)} 
+                          className="h-8 w-8 p-0 text-paypal-primary hover:text-paypal-primary/80 hover:bg-paypal-primary/10 rounded-full transition-all duration-300 hover:scale-110" 
+                          title="Mark as read"
+                        >
+                          <Check className="h-4 w-4" />
                         </Button>
                       )}
                       {onDeleteNotification && (
-                        <Button size="sm" variant="ghost" onClick={(e) => handleDelete(notification.id, e)} className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-100" title="Delete notification">
-                          <Trash2 className="h-3 w-3" />
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={(e) => handleDelete(notification.id, e)} 
+                          className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-full transition-all duration-300 hover:scale-110" 
+                          title="Delete notification"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       )}
                     </div>

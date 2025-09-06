@@ -47,11 +47,18 @@ public class UserController {
         if (userOptional.isPresent()) {
             User user = userOptional.get();
             if (passwordEncoder.matches(loginRequest.password, user.getPassword())) {
-                return ResponseEntity.ok(new LoginResponse("dummy-jwt-token-for-" + user.getId(), user.getId(), user.getFullName()));
+                boolean transactionPasswordSet = user.getTransactionPassword() != null && !user.getTransactionPassword().isEmpty();
+                return ResponseEntity.ok(new LoginResponse("dummy-jwt-token-for-" + user.getId(), user.getId(), user.getFullName(), transactionPasswordSet));
             }
         }
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<User> getUserById(@PathVariable Long id) {
+        Optional<User> userOptional = userRepository.findById(id);
+        return userOptional.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/email/{email}")
@@ -145,5 +152,70 @@ public class UserController {
             e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of("error", "Failed to delete user"));
         }
+    }
+    @PostMapping("/{id}/transaction-password")
+    public ResponseEntity<?> setTransactionPassword(@PathVariable Long id, @RequestBody SetTransactionPasswordRequest request) {
+        Optional<User> userOptional = userRepository.findById(id);
+
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            user.setTransactionPassword(passwordEncoder.encode(request.getPassword()));
+            userRepository.save(user);
+            return ResponseEntity.ok(Map.of("message", "Transaction password set successfully"));
+        }
+
+        return ResponseEntity.notFound().build();
+    }
+
+    @PutMapping("/{id}/transaction-password")
+    public ResponseEntity<?> changeTransactionPassword(@PathVariable Long id, @RequestBody ChangeTransactionPasswordRequest request) {
+        Optional<User> userOptional = userRepository.findById(id);
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        User user = userOptional.get();
+
+        // Verify user's current login password
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Incorrect account password."));
+        }
+
+        // Set the new transaction password
+        user.setTransactionPassword(passwordEncoder.encode(request.getNewTxnPassword()));
+        userRepository.save(user);
+
+        return ResponseEntity.ok(Map.of("message", "Transaction PIN changed successfully."));
+    }
+
+    @PostMapping("/verify-transaction-password")
+    public ResponseEntity<?> verifyTransactionPassword(@RequestBody VerifyTransactionPasswordRequest request) {
+        Optional<User> userOptional = userRepository.findById(request.getUserId());
+
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            if (user.getTransactionPassword() == null) {
+                return ResponseEntity.status(HttpStatus.PRECONDITION_FAILED).body(Map.of("verified", false, "error", "Transaction password not set"));
+            }
+            if (passwordEncoder.matches(request.getTransactionPassword(), user.getTransactionPassword())) {
+                return ResponseEntity.ok(Map.of("verified", true));
+            }
+        }
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("verified", false, "error", "Invalid transaction password"));
+    }
+    @PutMapping("/{id}/name")
+    public ResponseEntity<?> updateUserName(@PathVariable Long id, @RequestBody UpdateNameRequest request) {
+        Optional<User> userOptional = userRepository.findById(id);
+
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            user.setFirstName(request.getFirstName());
+            user.setLastName(request.getLastName());
+            userRepository.save(user);
+            return ResponseEntity.ok(Map.of("message", "Name updated successfully"));
+        }
+
+        return ResponseEntity.notFound().build();
     }
 }

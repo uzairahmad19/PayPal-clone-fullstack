@@ -2,6 +2,75 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.5s ease-out;
+}
+
+
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -26,26 +95,31 @@
     --radius: 0.5rem;
 
     /* PayPal-like colors */
-    --paypal-primary: 217 89% 29%; /* A deep blue */
-    --paypal-primary-foreground: 0 0% 98%; /* White */
-    --paypal-accent: 200 100% 36%; /* A vibrant blue */
-    --paypal-accent-foreground: 0 0% 98%; /* White */
-    --paypal-secondary: 210 40% 96.1%; /* Light gray */
+    --paypal-primary: 217 89% 29%;
+    /* A deep blue */
+    --paypal-primary-foreground: 0 0% 98%;
+    /* White */
+    --paypal-accent: 200 100% 36%;
+    /* A vibrant blue */
+    --paypal-accent-foreground: 0 0% 98%;
+    /* White */
+    --paypal-secondary: 210 40% 96.1%;
+    /* Light gray */
   }
 
   .dark {
-    --background: 210 20% 8%;          
-    --foreground: 200 15% 95%;         
-    --card: 205 18% 12%;               
+    --background: 210 20% 8%;
+    --foreground: 200 15% 95%;
+    --card: 205 18% 12%;
     --card-foreground: 200 15% 95%;
     --popover: 205 18% 12%;
     --popover-foreground: 200 15% 95%;
     --primary: 200 15% 95%;
     --primary-foreground: 210 20% 8%;
-    --secondary: 200 12% 20%;          
+    --secondary: 200 12% 20%;
     --secondary-foreground: 200 15% 95%;
     --muted: 200 12% 20%;
-    --muted-foreground: 195 8% 72%;    
+    --muted-foreground: 195 8% 72%;
     --accent: 200 12% 20%;
     --accent-foreground: 200 15% 95%;
     --destructive: 0 63% 31%;
@@ -53,10 +127,10 @@
     --border: 200 12% 20%;
     --input: 200 12% 20%;
     --ring: 195 8% 72%;
-  
+
     --paypal-primary: 217 89% 35%;
     --paypal-primary-foreground: 0 0% 98%;
-    --paypal-accent: 195 70% 50%;      
+    --paypal-accent: 195 70% 50%;
     --paypal-accent-foreground: 0 0% 98%;
     --paypal-secondary: 200 12% 20%;
   }
@@ -66,6 +140,7 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -99,6 +174,42 @@
   background-color: hsl(var(--accent) / 0.3);
 }
 
+/* Enhanced card styles */
+.enhanced-card {
+  transition: all 0.3s ease;
+  border: 1px solid hsl(var(--border));
+}
+
+.enhanced-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.dark .enhanced-card:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+}
+
+/* Gradient backgrounds */
+.gradient-primary {
+  background: linear-gradient(135deg, hsl(var(--paypal-primary)) 0%, hsl(var(--paypal-accent)) 100%);
+}
+
+.gradient-secondary {
+  background: linear-gradient(135deg, hsl(var(--muted)) 0%, hsl(var(--card)) 100%);
+}
+
+/* Glass morphism effect */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 /* Sidebar dark mode styles */
 .dark .bg-paypal-primary {
   background-color: hsl(var(--paypal-primary));
@@ -121,4 +232,70 @@
 .dark .hover\:bg-paypal-primary\/80:hover {
   background-color: hsl(var(--paypal-primary) / 0.8);
   transition: background-color 0.2s ease;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+  .animate-fade-in {
+    animation-duration: 0.4s;
+  }
+
+  .enhanced-card:hover {
+    transform: none;
+  }
+
+  .glass {
+    backdrop-filter: blur(8px);
+  }
+
+  /* Ensure dialogs are properly positioned on mobile */
+  [data-radix-popper-content-wrapper] {
+    z-index: 50 !important;
+  }
+  
+  /* Improve dialog positioning */
+  [role="dialog"] {
+    margin: 1rem !important;
+    max-height: calc(100vh - 2rem) !important;
+  }
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Focus improvements for accessibility */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid hsl(var(--paypal-primary));
+  outline-offset: 2px;
+}
+
+/* Dialog improvements */
+[data-state="open"][data-radix-dialog-content] {
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Ensure dialog overlay doesn't interfere */
+[data-radix-dialog-overlay] {
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+/* Loading state improvements */
+.loading-shimmer {
+  background: linear-gradient(90deg,
+      hsl(var(--muted)) 25%,
+      hsl(var(--muted-foreground) / 0.1) 50%,
+      hsl(var(--muted)) 75%);
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
 }

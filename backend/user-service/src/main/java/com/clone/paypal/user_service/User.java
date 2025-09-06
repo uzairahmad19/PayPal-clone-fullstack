@@ -19,11 +19,11 @@ public class User {
     @Column(nullable = false)
     private String lastName;
 
-    @Column
-    private String avatar;
-
     @Column(nullable = false)
     private String password;
+
+    @Column
+    private String transactionPassword;
 
     public Long getId() {
         return id;
@@ -57,14 +57,6 @@ public class User {
         this.lastName = lastName;
     }
 
-    public String getAvatar() {
-        return avatar;
-    }
-
-    public void setAvatar(String avatar) {
-        this.avatar = avatar;
-    }
-
     // Convenience method to get full name
     public String getFullName() {
         return firstName + " " + lastName;
@@ -76,5 +68,13 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getTransactionPassword() {
+        return transactionPassword;
+    }
+
+    public void setTransactionPassword(String transactionPassword) {
+        this.transactionPassword = transactionPassword;
     }
 }

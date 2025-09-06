@@ -27,7 +27,7 @@ export default async function RootLayout({
   return (
   <html lang="en" suppressHydrationWarning className="h-full w-full">
     <body className={`${inter.className} h-full w-full`}>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
         <SidebarProvider defaultOpen={defaultSidebarOpen}>
           {children}
           <Toaster />

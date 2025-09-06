@@ -7,11 +7,9 @@ import {
   LoginRequest, 
   LoginResponse, 
   RegisterRequest, 
-  CreateMoneyRequestDto, 
-  UserAnalytics 
+  CreateMoneyRequestDto 
 } from '@/types';
 
-// A helper function to safely extract userId from the dummy token
 const getUserIdFromToken = (token: string): number | null => {
   if (token.startsWith("dummy-jwt-token-for-")) {
     try {
@@ -21,13 +19,10 @@ const getUserIdFromToken = (token: string): number | null => {
       return null;
     }
   }
-  // If a real JWT is ever used, the decoding logic would go here
-  // For now, we only support the dummy token
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
     return payload.id || payload.sub;
   } catch (e) {
-    // This will catch the 'atob' error for the dummy token and prevent the crash
     console.warn("Token is not a standard JWT. Falling back to dummy token parsing.");
     return null;
   }
@@ -59,6 +54,16 @@ export const authApi = {
 
 // User API
 export const userApi = {
+
+  updateUserName: async (userId: number, data: { firstName: string; lastName: string }): Promise<any> => {
+    const response = await api.put(`/users/${userId}/name`, data);
+    return response.data;
+  },
+
+  setTransactionPassword: async (userId: number, password: string): Promise<any> => {
+    const response = await api.post(`/users/${userId}/transaction-password`, { password });
+    return response.data;
+  },
   searchUsers: async (query: string): Promise<User[]> => {
     const response = await api.get(`/users/search?q=${encodeURIComponent(query)}`);
     return response.data;
@@ -68,9 +73,9 @@ export const userApi = {
     const response = await api.get(`/users/${id}`);
     return response.data;
   },
-
-  getUserAnalytics: async (id: number): Promise<UserAnalytics> => {
-    const response = await api.get(`/users/analytics/${id}`);
+  
+  changeTransactionPassword: async (userId: number, data: any): Promise<any> => {
+    const response = await api.put(`/users/${userId}/transaction-password`, data);
     return response.data;
   },
 
@@ -119,8 +124,8 @@ export const requestApi = {
     return response.data.requests.filter((req: MoneyRequest) => req.requesterId === userId);
   },
 
-  approveRequest: async (requestId: number): Promise<MoneyRequest> => {
-    const response = await api.put(`/requests/${requestId}/approve`);
+  approveRequest: async (requestId: number, transactionPassword: string): Promise<MoneyRequest> => {
+    const response = await api.put(`/requests/${requestId}/approve`, { transactionPassword });
     return response.data;
   },
 
@@ -181,9 +186,9 @@ export const walletApi = {
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 404) {
-        return null; // Wallet not found
+        return null; 
       }
-      throw error; // Re-throw other errors
+      throw error;
     }
   },
 

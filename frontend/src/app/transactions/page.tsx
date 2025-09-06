@@ -4,10 +4,9 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Download, Search, Filter, Calendar } from "lucide-react";
+import { Download, Filter, Calendar } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import {
   Table,
@@ -33,7 +32,8 @@ import {
 import { formatDistanceToNowStrict } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { User, Transaction, Notification } from "@/types";
-import { authApi, transactionApi, notificationApi } from "@/lib/api-service";
+import { authApi, transactionApi, notificationApi, userApi } from "@/lib/api-service";
+import { TrendingUp, TrendingDown, DollarSign, ArrowLeftRight } from "lucide-react";
 
 export default function TransactionsPage() {
   const router = useRouter();
@@ -43,9 +43,10 @@ export default function TransactionsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [user, setUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
+
   const [filterType, setFilterType] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [dateRange, setDateRange] = useState("all");
@@ -66,13 +67,28 @@ export default function TransactionsPage() {
       fetchTransactions(user.id);
       fetchNotifications(user.id);
       fetchUnreadCount(user.id);
+      fetchAllUsers();
       setLoading(false);
     }
   }, [user]);
 
   useEffect(() => {
     applyFilters();
-  }, [transactions, searchTerm, filterType, filterStatus, dateRange]);
+  }, [transactions, filterType, filterStatus, dateRange]);
+
+  const getUserNameById = (id: number) => {
+    const user = users.find(u => u.id === id);
+    return user ? `${user.firstName} ${user.lastName}` : `User ${id}`;
+  };
+
+  const fetchAllUsers = async () => {
+    try {
+      const allUsers = await userApi.searchUsers("");
+      setUsers(allUsers);
+    } catch (err) {
+      console.error("Failed to fetch all users", err);
+    }
+  };
 
   const fetchUser = async () => {
     try {
@@ -115,14 +131,7 @@ export default function TransactionsPage() {
 
   const applyFilters = () => {
     let filtered = [...transactions];
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (t) =>
-          t.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          t.amount.toString().includes(searchTerm) ||
-          t.id.toString().includes(searchTerm)
-      );
-    }
+    
     if (filterType !== "all" && user) {
       filtered = filtered.filter((t) => {
         const isDebit = t.senderId === user.id;
@@ -164,7 +173,7 @@ export default function TransactionsPage() {
       ["ID", "Type", "Amount", "Party", "Description", "Status", "Date"],
       ...processedTransactions.map((tx) => [
         tx.id, tx.type, tx.amount,
-        tx.type === "DEBIT" ? `User ${tx.recipientId}` : `User ${tx.senderId}`,
+        tx.type === "DEBIT" ? getUserNameById(tx.recipientId) : getUserNameById(tx.senderId),
         tx.description || "—", tx.status,
         new Date(tx.timestamp).toLocaleDateString(),
       ]),
@@ -268,24 +277,119 @@ export default function TransactionsPage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold">Transaction History</h1>
-            <p className="text-muted-foreground">View and manage all your transactions ({processedTransactions.length} total)</p>
+            <p className="text-muted-foreground">View and manage all your transactions </p>
           </div>
           <Button onClick={handleExportCSV} className="flex items-center gap-2" disabled={processedTransactions.length === 0}><Download className="h-4 w-4" />Export CSV</Button>
         </div>
+        {/* Flow Analytics Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Net Flow</CardTitle>
+              <span className="h-4 w-4 text-muted-foreground">₹</span>
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${(() => {
+                const totalInflow = filteredTransactions.filter(t => t.recipientId === user?.id && t.status.toLowerCase() === 'completed').reduce((sum, t) => sum + t.amount, 0);
+                const totalOutflow = filteredTransactions.filter(t => t.senderId === user?.id && t.status.toLowerCase() === 'completed').reduce((sum, t) => sum + t.amount, 0);
+                const netFlow = totalInflow - totalOutflow;
+                return netFlow >= 0 ? 'text-green-600' : 'text-red-600';
+              })()}`}>
+                {(() => {
+                  const totalInflow = filteredTransactions.filter(t => t.recipientId === user?.id && t.status.toLowerCase() === 'completed').reduce((sum, t) => sum + t.amount, 0);
+                  const totalOutflow = filteredTransactions.filter(t => t.senderId === user?.id && t.status.toLowerCase() === 'completed').reduce((sum, t) => sum + t.amount, 0);
+                  const netFlow = totalInflow - totalOutflow;
+                  return `${netFlow >= 0 ? '+' : '-'}₹${Math.abs(netFlow).toFixed(2)}`;
+                })()}
+              </div>
+              <p className="text-xs text-muted-foreground">Income vs. Expenses</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Volume</CardTitle>
+              <ArrowLeftRight className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                ₹{(() => {
+                  const totalInflow = filteredTransactions.filter(t => t.recipientId === user?.id && t.status.toLowerCase() === 'completed').reduce((sum, t) => sum + t.amount, 0);
+                  const totalOutflow = filteredTransactions.filter(t => t.senderId === user?.id && t.status.toLowerCase() === 'completed').reduce((sum, t) => sum + t.amount, 0);
+                  return (totalInflow + totalOutflow).toFixed(2);
+                })()}
+              </div>
+              <p className="text-xs text-muted-foreground">Total money moved</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Inflow</CardTitle>
+              <TrendingUp className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                +₹{filteredTransactions.filter(t => t.recipientId === user?.id && t.status.toLowerCase() === 'completed').reduce((sum, t) => sum + t.amount, 0).toFixed(2)}
+              </div>
+              <p className="text-xs text-muted-foreground">Total money received</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Outflow</CardTitle>
+              <TrendingDown className="h-4 w-4 text-red-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">
+                -₹{filteredTransactions.filter(t => t.senderId === user?.id && t.status.toLowerCase() === 'completed').reduce((sum, t) => sum + t.amount, 0).toFixed(2)}
+              </div>
+              <p className="text-xs text-muted-foreground">Total money sent</p>
+            </CardContent>
+          </Card>
+        </div>
+
+
         <Card>
-          <CardHeader><CardTitle className="flex items-center gap-2"><Filter className="h-5 w-5" />Filters & Search</CardTitle></CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              <div className="relative"><Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" /></div>
-              <Select value={filterType} onValueChange={setFilterType}><SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger><SelectContent><SelectItem value="all">All Types</SelectItem><SelectItem value="credit">Credit</SelectItem><SelectItem value="debit">Debit</SelectItem></SelectContent></Select>
-              <Select value={filterStatus} onValueChange={setFilterStatus}><SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger><SelectContent><SelectItem value="all">All Status</SelectItem><SelectItem value="completed">Completed</SelectItem><SelectItem value="pending">Pending</SelectItem><SelectItem value="failed">Failed</SelectItem></SelectContent></Select>
-              <Select value={dateRange} onValueChange={setDateRange}><SelectTrigger><SelectValue placeholder="Date Range" /></SelectTrigger><SelectContent><SelectItem value="all">All Time</SelectItem><SelectItem value="today">Today</SelectItem><SelectItem value="week">Last 7 Days</SelectItem><SelectItem value="month">Last 30 Days</SelectItem><SelectItem value="3months">Last 3 Months</SelectItem></SelectContent></Select>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground"><Calendar className="h-4 w-4" />{processedTransactions.length} results</div>
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              <CardTitle>All Transactions</CardTitle>
+              
+              {/* Filter Controls */}
+              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                <div className="flex gap-3">
+                  <Select value={filterType} onValueChange={setFilterType}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="credit">Credit</SelectItem>
+                      <SelectItem value="debit">Debit</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select value={dateRange} onValueChange={setDateRange}>
+                    <SelectTrigger className="w-36">
+                      <SelectValue placeholder="Period" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Time</SelectItem>
+                      <SelectItem value="today">Today</SelectItem>
+                      <SelectItem value="week">Last 7 Days</SelectItem>
+                      <SelectItem value="month">Last 30 Days</SelectItem>
+                      <SelectItem value="3months">Last 3 Months</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* Results Counter */}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <span className="font-medium">{processedTransactions.length}</span>
+                  <span>results</span>
+                </div>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader><CardTitle>All Transactions</CardTitle></CardHeader>
+          </CardHeader>
           <CardContent>
             <div className="rounded-md border">
               <Table>
@@ -296,7 +400,7 @@ export default function TransactionsPage() {
                       <TableCell className="font-mono text-xs text-muted-foreground">{tx.id}</TableCell>
                       <TableCell><Badge variant={tx.type === "DEBIT" ? "destructive" : "default"} className={tx.type === "DEBIT" ? "bg-destructive/10 text-destructive" : "bg-paypal-accent/10 text-paypal-accent"}>{tx.type}</Badge></TableCell>
                       <TableCell className={`font-semibold ${tx.type === "DEBIT" ? "text-destructive" : "text-paypal-accent"}`}>{tx.type === "DEBIT" ? "-" : "+"}₹{tx.amount.toFixed(2)}</TableCell>
-                      <TableCell>{tx.type === "DEBIT" ? `User ${tx.recipientId}` : `User ${tx.senderId}`}</TableCell>
+                      <TableCell>{tx.type === "DEBIT" ? getUserNameById(tx.recipientId) : getUserNameById(tx.senderId)}</TableCell>
                       <TableCell className="hidden sm:table-cell"><span className={tx.description ? "text-foreground" : "text-muted-foreground italic"}>{tx.description || "—"}</span></TableCell>
                       <TableCell className="hidden md:table-cell">
                         {tx.status.toLowerCase().includes("fail") ? (

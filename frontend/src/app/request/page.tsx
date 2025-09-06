@@ -1,25 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { HandCoins, Send, Check, X, Clock, Plus } from "lucide-react";
+import { HandCoins, Send, Check, X, Clock, Plus, User as UserIcon } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import {
   Tabs,
   TabsContent,
@@ -29,7 +17,10 @@ import {
 import { formatDistanceToNowStrict } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { MoneyRequest, User, Notification } from "@/types";
-import { requestApi, userApi, authApi, notificationApi } from "@/lib/api-service";
+import { requestApi, authApi, notificationApi, userApi } from "@/lib/api-service";
+import { MoneyRequestModal } from "@/components/money-request-modal";
+import { ApproveRequestModal } from "@/components/approve-request-modal";
+import { cn } from "@/lib/utils";
 
 export default function RequestMoneyPage() {
   const { toast } = useToast();
@@ -38,14 +29,12 @@ export default function RequestMoneyPage() {
   const [outgoingRequests, setOutgoingRequests] = useState<MoneyRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<MoneyRequest | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [newRequest, setNewRequest] = useState({
-    recipientEmail: "",
-    amount: "",
-    message: "",
-  });
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -59,6 +48,7 @@ export default function RequestMoneyPage() {
         const currentUser = await authApi.getMe();
         setUser(currentUser);
         await Promise.all([
+          fetchAllUsers(),
           fetchIncomingRequests(),
           fetchOutgoingRequests(),
           fetchNotifications(currentUser.id),
@@ -73,6 +63,29 @@ export default function RequestMoneyPage() {
     };
     fetchData();
   }, [router, toast]);
+
+  const refreshData = () => {
+    if (user) {
+      fetchIncomingRequests();
+      fetchOutgoingRequests();
+      fetchNotifications(user.id);
+      fetchUnreadCount(user.id);
+    }
+  };
+
+  const fetchAllUsers = async () => {
+    try {
+      const response = await userApi.searchUsers("");
+      setUsers(response);
+    } catch (error) {
+      console.error("Error fetching all users:", error);
+    }
+  };
+  
+  const getUserNameById = (id: number) => {
+    const user = users.find(u => u.id === id);
+    return user ? `${user.firstName} ${user.lastName}` : `User ${id}`;
+  };
 
   const fetchIncomingRequests = async () => {
     try {
@@ -110,52 +123,21 @@ export default function RequestMoneyPage() {
     }
   };
 
-  const handleCreateRequest = async () => {
-    if (!user || !newRequest.recipientEmail || !newRequest.amount) {
-      toast({ variant: "destructive", title: "Error", description: "Recipient and amount required." });
-      return;
-    }
-    try {
-      const userResponse = await userApi.searchUsers(newRequest.recipientEmail);
-      const recipient = userResponse.find((u: User) => u.email === newRequest.recipientEmail);
-      if (!recipient) {
-        toast({ variant: "destructive", title: "Error", description: "Recipient not found." });
-        return;
-      }
-      await requestApi.createRequest({
-        requesterId: user.id,
-        recipientId: recipient.id,
-        amount: parseFloat(newRequest.amount),
-        message: newRequest.message,
-      });
-      toast({ title: "Success", description: "Request sent successfully." });
-      setShowCreateModal(false);
-      setNewRequest({ recipientEmail: "", amount: "", message: "" });
-      fetchOutgoingRequests();
-      fetchNotifications(user.id);
-      fetchUnreadCount(user.id);
-    } catch (error) {
-      console.error("Error creating request:", error);
-      toast({ variant: "destructive", title: "Error", description: "Failed to send request." });
-    }
+  const handleApprove = (request: MoneyRequest) => {
+    setSelectedRequest(request);
+    setShowApproveModal(true);
   };
 
-  const handleRequestAction = async (requestId: number, action: "approve" | "reject") => {
+  const handleReject = async (requestId: number) => {
     if (!user) return;
     try {
-      if (action === "approve") {
-        await requestApi.approveRequest(requestId);
-        toast({ title: "Success", description: "Request approved." });
-      } else {
-        await requestApi.rejectRequest(requestId);
-        toast({ title: "Request Rejected" });
-      }
-      fetchIncomingRequests();
-      fetchNotifications(user.id);
-      fetchUnreadCount(user.id);
-    } catch (error) {
-      console.error(`Error ${action}ing request:`, error);
-      toast({ variant: "destructive", title: "Error", description: `Failed to ${action} request.` });
+      await requestApi.rejectRequest(requestId);
+      toast({ title: "Request Rejected" });
+      refreshData();
+    } catch (error: any) {
+      console.error(`Error rejecting request:`, error);
+      const errorMessage = error.response?.data?.message || "Failed to reject request.";
+      toast({ variant: "destructive", title: "Error", description: errorMessage });
     }
   };
 
@@ -164,9 +146,7 @@ export default function RequestMoneyPage() {
     try {
       await requestApi.cancelRequest(requestId);
       toast({ title: "Success", description: "Request cancelled." });
-      fetchOutgoingRequests();
-      fetchNotifications(user.id);
-      fetchUnreadCount(user.id);
+      refreshData();
     } catch (error) {
       console.error("Error cancelling request:", error);
       toast({ variant: "destructive", title: "Error", description: "Failed to cancel request." });
@@ -175,11 +155,16 @@ export default function RequestMoneyPage() {
   
   const getStatusBadge = (status: string) => {
     const styleMap: { [key: string]: string } = {
-      approved: "bg-green-100 text-green-800",
-      pending: "bg-yellow-100 text-yellow-800",
-      rejected: "bg-red-100 text-red-800",
+      approved: "bg-green-100 text-green-800 border-green-200",
+      pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
+      rejected: "bg-red-100 text-red-800 border-red-200",
     };
-    return <Badge className={styleMap[status] || "bg-gray-100"}>{status}</Badge>;
+    const iconMap: { [key: string]: React.ReactNode } = {
+        approved: <Check className="h-3 w-3" />,
+        pending: <Clock className="h-3 w-3" />,
+        rejected: <X className="h-3 w-3" />,
+    }
+    return <Badge className={cn(styleMap[status], "capitalize") || "bg-gray-100"}>{iconMap[status]} {status}</Badge>;
   };
   
   const handleLogout = () => {
@@ -231,6 +216,8 @@ export default function RequestMoneyPage() {
     }
   };
 
+  const pendingIncomingCount = useMemo(() => incomingRequests.filter(r => r.status === "pending").length, [incomingRequests]);
+
   if (loading || !user) {
     return (
       <DashboardLayout
@@ -244,7 +231,7 @@ export default function RequestMoneyPage() {
       >
         <div className="space-y-6">
           <div className="flex justify-between items-center"><div className="space-y-2"><Skeleton className="h-8 w-48" /><Skeleton className="h-4 w-64" /></div><Skeleton className="h-10 w-32" /></div>
-          <Card><CardHeader><Skeleton className="h-10 w-full" /></CardHeader></Card>
+          <Card><CardContent><Skeleton className="h-10 w-full" /></CardContent></Card>
           <div className="space-y-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}</div>
         </div>
       </DashboardLayout>
@@ -261,66 +248,77 @@ export default function RequestMoneyPage() {
       onMarkAsRead={handleMarkNotificationAsRead}
       onDeleteNotification={handleDeleteNotification}
     >
+        <MoneyRequestModal
+            isOpen={showCreateModal}
+            onClose={() => setShowCreateModal(false)}
+            currentUser={user}
+            onRequestCreated={refreshData}
+        />
+        {selectedRequest && (
+        <ApproveRequestModal
+          isOpen={showApproveModal}
+          onClose={() => setShowApproveModal(false)}
+          request={selectedRequest}
+          onRequestApproved={refreshData}
+        />
+      )}
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div><h1 className="text-3xl font-bold flex items-center gap-2"><HandCoins className="h-8 w-8" />Money Requests</h1><p className="text-muted-foreground">Request and manage money requests</p></div>
-          <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-            <DialogTrigger asChild><Button className="flex items-center gap-2"><Plus className="h-4 w-4" />New Request</Button></DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Request Money</DialogTitle><DialogDescription>Send a money request to another user.</DialogDescription></DialogHeader>
-              <div className="space-y-4">
-                <div><Label htmlFor="recipientEmail">Recipient Email</Label><Input id="recipientEmail" placeholder="recipient@example.com" value={newRequest.recipientEmail} onChange={(e) => setNewRequest(p => ({ ...p, recipientEmail: e.target.value }))} /></div>
-                <div><Label htmlFor="amount">Amount (₹)</Label><Input id="amount" type="number" placeholder="0.00" value={newRequest.amount} onChange={(e) => setNewRequest(p => ({ ...p, amount: e.target.value }))} /></div>
-                <div><Label htmlFor="message">Message</Label><Textarea id="message" placeholder="What's this for?" value={newRequest.message} onChange={(e) => setNewRequest(p => ({ ...p, message: e.target.value }))} /></div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setShowCreateModal(false)}>Cancel</Button>
-                <Button onClick={handleCreateRequest} disabled={!newRequest.recipientEmail || !newRequest.amount}><Send className="h-4 w-4 mr-2" />Send Request</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <div><h1 className="text-3xl font-bold flex items-center gap-2"><HandCoins className="h-8 w-8" />Money Requests</h1><p className="text-muted-foreground">Create and manage your money requests</p></div>
+          <Button className="flex items-center gap-2" onClick={() => setShowCreateModal(true)}><Plus className="h-4 w-4" />New Request</Button>
         </div>
+
         <Tabs defaultValue="incoming" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="incoming" className="flex items-center gap-2">Incoming{incomingRequests.filter(r => r.status === "pending").length > 0 && <Badge variant="destructive">{incomingRequests.filter(r => r.status === "pending").length}</Badge>}</TabsTrigger>
+            <TabsTrigger value="incoming" className="flex items-center gap-2">Incoming{pendingIncomingCount > 0 && <Badge variant="destructive">{pendingIncomingCount}</Badge>}</TabsTrigger>
             <TabsTrigger value="outgoing">Outgoing</TabsTrigger>
           </TabsList>
           <TabsContent value="incoming" className="space-y-4">
-            {incomingRequests.length === 0 ? <Card><CardContent className="py-12 text-center"><HandCoins className="h-12 w-12 mx-auto text-muted-foreground mb-4" /><h3 className="font-semibold">No incoming requests</h3></CardContent></Card> : incomingRequests.map((req) => (
-              <Card key={req.id}>
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold">From: User {req.requesterId}</p>
-                    <p className="text-2xl font-bold">₹{req.amount.toFixed(2)}</p>
-                    <p className="text-sm text-muted-foreground">"{req.message}"</p>
-                    <p className="text-xs text-muted-foreground">{formatDistanceToNowStrict(new Date(req.timestamp), { addSuffix: true })}</p>
+            {incomingRequests.length === 0 ? <Card><CardContent className="py-12 text-center"><HandCoins className="h-12 w-12 mx-auto text-muted-foreground mb-4" /><h3 className="font-semibold">No incoming requests</h3><p className="text-sm text-muted-foreground">When someone sends you a request, it will appear here.</p></CardContent></Card> : incomingRequests.map((req) => (
+              <Card key={req.id} className={cn("enhanced-card transition-all hover:shadow-lg hover:-translate-y-1", req.status === 'pending' && "bg-blue-50/50 border-l-4 border-l-paypal-accent")}>
+                <CardContent className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="p-3 bg-muted rounded-full"><UserIcon className="h-5 w-5 text-muted-foreground" /></div>
+                    <div className="flex-1">
+                        <p className="font-semibold text-base">From: {getUserNameById(req.requesterId)}</p>
+                        <p className="text-sm text-muted-foreground italic">"{req.message}"</p>
+                        <p className="text-xs text-muted-foreground mt-1">{formatDistanceToNowStrict(new Date(req.timestamp), { addSuffix: true })}</p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {getStatusBadge(req.status)}
-                    {req.status === "pending" && (
-                      <>
-                        <Button size="sm" variant="outline" className="text-red-600 hover:bg-red-50" onClick={() => handleRequestAction(req.id, "reject")}><X className="h-4 w-4" /></Button>
-                        <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleRequestAction(req.id, "approve")}><Check className="h-4 w-4" /></Button>
-                      </>
-                    )}
+                  <div className="flex flex-col items-end gap-2 w-full sm:w-auto self-stretch sm:self-center">
+                    <p className="text-3xl font-bold text-paypal-primary">₹{req.amount.toFixed(2)}</p>
+                    <div className="flex items-center justify-end gap-2 mt-auto">
+                      {getStatusBadge(req.status)}
+                      {req.status === "pending" && (
+                        <>
+                          <Button size="sm" variant="outline" className="text-red-600 hover:bg-red-50 border-red-300 hover:text-red-700" onClick={() => handleReject(req.id)}><X className="h-4 w-4 mr-1" />Reject</Button>
+                          <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleApprove(req)}><Check className="h-4 w-4 mr-1" />Approve</Button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             ))}
           </TabsContent>
           <TabsContent value="outgoing" className="space-y-4">
-            {outgoingRequests.length === 0 ? <Card><CardContent className="py-12 text-center"><Send className="h-12 w-12 mx-auto text-muted-foreground mb-4" /><h3 className="font-semibold">No outgoing requests</h3></CardContent></Card> : outgoingRequests.map((req) => (
-              <Card key={req.id}>
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold">To: User {req.recipientId}</p>
-                    <p className="text-2xl font-bold">₹{req.amount.toFixed(2)}</p>
-                    <p className="text-sm text-muted-foreground">"{req.message}"</p>
-                    <p className="text-xs text-muted-foreground">{formatDistanceToNowStrict(new Date(req.timestamp), { addSuffix: true })}</p>
+            {outgoingRequests.length === 0 ? <Card><CardContent className="py-12 text-center"><Send className="h-12 w-12 mx-auto text-muted-foreground mb-4" /><h3 className="font-semibold">No outgoing requests</h3><p className="text-sm text-muted-foreground">Click "New Request" to send your first one.</p></CardContent></Card> : outgoingRequests.map((req) => (
+              <Card key={req.id} className="enhanced-card transition-all hover:shadow-lg hover:-translate-y-1">
+                 <CardContent className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                   <div className="flex items-center gap-4 flex-1">
+                    <div className="p-3 bg-muted rounded-full"><UserIcon className="h-5 w-5 text-muted-foreground" /></div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-base">To: {getUserNameById(req.recipientId)}</p>
+                      <p className="text-sm text-muted-foreground italic">"{req.message}"</p>
+                      <p className="text-xs text-muted-foreground mt-1">{formatDistanceToNowStrict(new Date(req.timestamp), { addSuffix: true })}</p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {getStatusBadge(req.status)}
-                    {req.status === "pending" && <Button size="sm" variant="outline" onClick={() => handleCancelRequest(req.id)}>Cancel</Button>}
+                   <div className="flex flex-col items-end gap-2 w-full sm:w-auto self-stretch sm:self-center">
+                    <p className="text-3xl font-bold">₹{req.amount.toFixed(2)}</p>
+                    <div className="flex items-center justify-end gap-2 mt-auto">
+                      {getStatusBadge(req.status)}
+                      {req.status === "pending" && <Button size="sm" variant="outline" onClick={() => handleCancelRequest(req.id)}>Cancel</Button>}
+                    </div>
                   </div>
                 </CardContent>
               </Card>

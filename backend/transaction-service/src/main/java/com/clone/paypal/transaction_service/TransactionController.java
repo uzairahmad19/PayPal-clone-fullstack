@@ -1,8 +1,11 @@
+// backend/transaction-service/src/main/java/com/clone/paypal/transaction_service/TransactionController.java
+
 package com.clone.paypal.transaction_service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
 import org.springframework.transaction.annotation.Transactional;
 
 @RestController
@@ -12,14 +15,20 @@ public class TransactionController {
     @Autowired private TransactionRepository transactionRepository;
 
     @PostMapping
-    public ResponseEntity<Transaction> createTransaction(@RequestBody TransactionRequest request) {
-        // Pass the description from the request to the service method
+    public ResponseEntity<?> createTransaction(@RequestBody TransactionRequest request) {
         Transaction newTransaction = transactionService.performTransaction(
                 request.getSenderId(),
                 request.getRecipientEmail(),
                 request.getAmount(),
-                request.getDescription()
+                request.getDescription(),
+                request.getTransactionPassword()
         );
+
+        if (newTransaction.getStatus().startsWith("FAILED")) {
+            String errorMessage = newTransaction.getStatus().replace("FAILED: ", "");
+            return ResponseEntity.badRequest().body(Map.of("message", errorMessage));
+        }
+
         return ResponseEntity.ok(newTransaction);
     }
 

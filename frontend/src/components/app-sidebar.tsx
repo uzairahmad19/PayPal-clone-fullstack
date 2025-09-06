@@ -8,7 +8,6 @@ import {
   ChevronDown,
   User2,
   CreditCard,
-  BarChart,
   Bell,
   HandCoins,
 } from "lucide-react";
@@ -56,7 +55,7 @@ export function AppSidebar({ userName, onLogout }: AppSidebarProps) {
           </span>
         </Link>
       </SidebarHeader>
-      <SidebarContent className="py-4">
+      <SidebarContent className="flex-1 py-4 overflow-y-auto overflow-x-hidden">
         <SidebarGroup>
           <SidebarGroupLabel className="px-4 text-xs font-semibold uppercase text-paypal-primary-foreground/70 mb-2">
             Main Navigation
@@ -64,65 +63,42 @@ export function AppSidebar({ userName, onLogout }: AppSidebarProps) {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Dashboard" isActive={true}>
+                <SidebarMenuButton asChild isActive={true}>
                   <Link
                     href="/dashboard"
                     prefetch={false}
-                    className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-paypal-accent/20"
+                    className="group flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-paypal-accent/20 transition-all duration-300 hover:scale-105"
                   >
-                    <Home className="h-5 w-5" />
+                    <Home className="h-5 w-5 group-hover:scale-110 transition-transform duration-300" />
                     <span className="font-medium">Dashboard</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Wallet">
-                  <Link
-                    href="/dashboard#wallet"
-                    prefetch={false}
-                    className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-paypal-accent/20"
-                  >
-                    <CreditCard className="h-5 w-5" />
-                    <span className="font-medium">Wallet</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Transactions">
+                <SidebarMenuButton asChild>
                   <Link
                     href="/transactions"
                     prefetch={false}
-                    className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-paypal-accent/20"
+                    className="group flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-paypal-accent/20 transition-all duration-300 hover:scale-105"
                   >
-                    <Repeat2 className="h-5 w-5" />
+                    <Repeat2 className="h-5 w-5 group-hover:rotate-180 transition-transform duration-300" />
                     <span className="font-medium">Transactions</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Request Money">
+                <SidebarMenuButton asChild>
                   <Link
                     href="/request"
                     prefetch={false}
-                    className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-paypal-accent/20"
+                    className="group flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-paypal-accent/20 transition-all duration-300 hover:scale-105"
                   >
-                    <HandCoins className="h-5 w-5" />
+                    <HandCoins className="h-5 w-5 group-hover:scale-110 transition-transform duration-300" />
                     <span className="font-medium">Request Money</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Analytics">
-                  <Link
-                    href="/analytics"
-                    prefetch={false}
-                    className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-paypal-accent/20"
-                  >
-                    <BarChart className="h-5 w-5" />
-                    <span className="font-medium">Analytics</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -134,13 +110,13 @@ export function AppSidebar({ userName, onLogout }: AppSidebarProps) {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Profile">
+                <SidebarMenuButton asChild>
                   <Link
                     href="/profile"
                     prefetch={false}
-                    className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-paypal-accent/20"
+                    className="group flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-paypal-accent/20 transition-all duration-300 hover:scale-105"
                   >
-                    <User2 className="h-5 w-5" />
+                    <User2 className="h-5 w-5 group-hover:scale-110 transition-transform duration-300" />
                     <span className="font-medium">Profile</span>
                   </Link>
                 </SidebarMenuButton>
@@ -151,39 +127,15 @@ export function AppSidebar({ userName, onLogout }: AppSidebarProps) {
       </SidebarContent>
       <SidebarFooter className="p-4 border-t border-paypal-primary-foreground/20">
         <SidebarMenu>
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+            <SidebarMenuItem>
                 <SidebarMenuButton
-                  tooltip="User Menu"
-                  className="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-paypal-accent/20"
+                onClick={onLogout}
+                className="group flex items-center gap-3 px-4 py-3 rounded-xl hover: transition-all duration-300 hover:scale-105"
                 >
-                  <User2 className="h-5 w-5" />
-                  <span className="font-medium">{userName}</span>
-                  <ChevronDown className="ml-auto h-4 w-4 shrink-0 opacity-70" />
+                <LogOut className="h-5 w-5 group-hover:scale-110 transition-transform duration-300" />
+                <span className="font-medium">Logout</span>
                 </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                side="top"
-                align="start"
-                className="w-[var(--radix-popper-anchor-width)] bg-card text-foreground shadow-lg"
-              >
-                <DropdownMenuItem className="cursor-pointer hover:bg-muted">
-                  Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer hover:bg-muted">
-                  Billing
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={onLogout}
-                  className="cursor-pointer text-destructive hover:bg-destructive/10"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
+            </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>

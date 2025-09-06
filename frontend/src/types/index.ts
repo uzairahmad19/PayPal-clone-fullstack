@@ -1,3 +1,5 @@
+// src/types/index.ts
+
 // Updated data models to match backend changes
 
 export interface User {
@@ -16,6 +18,7 @@ export interface Transaction {
   status: 'pending' | 'completed' | 'failed';
   timestamp: string;
   description?: string;
+  transactionPassword?: string;
 }
 
 export interface Notification {
@@ -48,17 +51,10 @@ export interface LoginResponse {
   token: string;
   id: number;
   name: string; // Backend still returns 'name' as fullName for compatibility
+  transactionPasswordSet: boolean;
 }
 
-export interface UserAnalytics {
-  transactions: any;
-  wallet: any;
-  summary: {
-    totalTransactions: number;
-    totalSpent: number;
-    totalReceived: number;
-  };
-}
+
 
 // Request DTOs
 export interface CreateMoneyRequestDto {

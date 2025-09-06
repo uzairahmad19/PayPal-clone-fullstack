@@ -4,13 +4,16 @@ public class LoginResponse {
     private String token;
     private Long id;
     private String name;
+    private boolean transactionPasswordSet;
 
-    public LoginResponse(String token, Long id, String name) {
+    public LoginResponse(String token, Long id, String name, boolean transactionPasswordSet) {
         this.token = token;
         this.id = id;
         this.name = name;
+        this.transactionPasswordSet = transactionPasswordSet;
     }
 
+    // Getters and Setters
     public String getToken() {
         return token;
     }
@@ -33,5 +36,13 @@ public class LoginResponse {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public boolean isTransactionPasswordSet() {
+        return transactionPasswordSet;
+    }
+
+    public void setTransactionPasswordSet(boolean transactionPasswordSet) {
+        this.transactionPasswordSet = transactionPasswordSet;
     }
 }

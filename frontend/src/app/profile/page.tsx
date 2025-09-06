@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
 import { Skeleton } from "@/components/ui/skeleton";
-import { User as UserIcon, Mail, Lock, Camera, Save, Edit, Trash2 } from "lucide-react";
+import { User as UserIcon, Lock, Save, Edit, Trash2 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import {
   Dialog,
@@ -23,6 +23,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { User, Notification } from "@/types";
 import { authApi, userApi, notificationApi } from "@/lib/api-service";
+import { cn } from "@/lib/utils";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -31,19 +32,25 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showTxnPasswordModal, setShowTxnPasswordModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [editForm, setEditForm] = useState({
     firstName: "",
     lastName: "",
-    email: "",
   });
   
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
+  });
+
+  const [txnPasswordForm, setTxnPasswordForm] = useState({
+    currentPassword: "",
+    newTxnPassword: "",
+    confirmTxnPassword: "",
   });
 
   useEffect(() => {
@@ -55,13 +62,14 @@ export default function ProfilePage() {
       setEditForm({
         firstName: user.firstName,
         lastName: user.lastName,
-        email: user.email,
       });
       fetchNotifications(user.id);
       fetchUnreadCount(user.id);
     }
   }, [user]);
 
+
+  
   const fetchUserProfile = async () => {
     setLoading(true);
     try {
@@ -100,10 +108,19 @@ export default function ProfilePage() {
   };
 
   const handleSaveProfile = async () => {
-    // This is a mock save. In a real app, you would make an API call to update the user profile.
-    setUser((prevUser) => (prevUser ? { ...prevUser, ...editForm } : null));
-    setEditing(false);
-    toast({ title: "Success", description: "Profile updated successfully!" });
+    if (!user) return;
+    try {
+      await userApi.updateUserName(user.id, {
+        firstName: editForm.firstName,
+        lastName: editForm.lastName,
+      });
+      setUser((prevUser) => (prevUser ? { ...prevUser, ...editForm } : null));
+      setEditing(false);
+      toast({ title: "Success", description: "Name updated successfully!" });
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast({ variant: "destructive", title: "Error", description: "Failed to update profile." });
+    }
   };
 
   const handleChangePassword = async () => {
@@ -133,6 +150,44 @@ export default function ProfilePage() {
       });
     }
   };
+
+  const handleChangeTxnPassword = async () => {
+    if (txnPasswordForm.newTxnPassword !== txnPasswordForm.confirmTxnPassword) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "New transaction passwords don't match!",
+      });
+      return;
+    }
+    if (txnPasswordForm.newTxnPassword.length < 6) {
+      toast({
+        variant: "destructive",
+        title: "Invalid Password",
+        description: "Transaction password must be at least 6 characters.",
+      });
+      return;
+    }
+    if (!user) return;
+
+    try {
+      await userApi.changeTransactionPassword(user.id, {
+        currentPassword: txnPasswordForm.currentPassword,
+        newTxnPassword: txnPasswordForm.newTxnPassword,
+      });
+      setTxnPasswordForm({ currentPassword: "", newTxnPassword: "", confirmTxnPassword: "" });
+      setShowTxnPasswordModal(false);
+      toast({ title: "Success", description: "Transaction password changed successfully!" });
+    } catch (error: any)      {
+      console.error("Error changing transaction password:", error);
+      toast({
+        variant: "destructive",
+        title: "Password Change Failed",
+        description: error.response?.data?.message || "An unexpected error occurred.",
+      });
+    }
+  };
+  
   
   const handleDeleteAccount = async () => {
     if (!user) return;
@@ -150,15 +205,15 @@ export default function ProfilePage() {
 
   const handleMarkAllNotificationsAsRead = async () => {
     if (!user) return;
-    const originalNotifications = [...notifications];
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     setUnreadCount(0);
     try {
       await notificationApi.markAllAsRead(user.id);
     } catch (error) {
-      setNotifications(originalNotifications);
-      fetchUnreadCount(user.id);
-      toast({ variant: "destructive", title: "Error", description: "Could not mark all notifications as read." });
+      if(user) {
+        fetchNotifications(user.id);
+        fetchUnreadCount(user.id);
+      }
     }
   };
 
@@ -170,9 +225,10 @@ export default function ProfilePage() {
     try {
       await notificationApi.markAsRead(id);
     } catch (error) {
-      fetchNotifications(user.id);
-      fetchUnreadCount(user.id);
-      toast({ variant: "destructive", title: "Error", description: "Could not mark notification as read." });
+      if(user){
+        fetchNotifications(user.id);
+        fetchUnreadCount(user.id);
+      }
     }
   };
 
@@ -185,18 +241,11 @@ export default function ProfilePage() {
       await notificationApi.deleteNotification(id);
       toast({ title: "Notification Deleted" });
     } catch (error) {
-      fetchNotifications(user.id);
-      fetchUnreadCount(user.id);
+      if(user){
+        fetchNotifications(user.id);
+        fetchUnreadCount(user.id);
+      }
       toast({ variant: "destructive", title: "Error", description: "Could not delete notification." });
-    }
-  };
-
-  const handleProfilePictureUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => setUser((prev) => prev ? { ...prev, avatar: e.target?.result as string } : null);
-      reader.readAsDataURL(file);
     }
   };
 
@@ -216,51 +265,37 @@ export default function ProfilePage() {
         onMarkAsRead={() => {}}
         onDeleteNotification={() => {}}
       >
-        <div className="space-y-6">
+        <div className="p-6 lg:p-8 space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div className="space-y-2">
                 <Skeleton className="h-8 w-48" />
                 <Skeleton className="h-4 w-64" />
               </div>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card className="lg:col-span-1">
-                <CardHeader><Skeleton className="h-6 w-32" /></CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="flex flex-col items-center space-y-4">
-                    <Skeleton className="h-32 w-32 rounded-full" />
-                    <Skeleton className="h-10 w-32" />
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <Skeleton className="h-6 w-1/2" />
+                  <Skeleton className="h-4 w-3/4" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2"><Skeleton className="h-4 w-1/4" /><Skeleton className="h-10 w-full" /></div>
+                    <div className="space-y-2"><Skeleton className="h-4 w-1/4" /><Skeleton className="h-10 w-full" /></div>
                   </div>
-                  <div className="space-y-4">
-                    <div className="space-y-2"><Skeleton className="h-4 w-16" /><Skeleton className="h-6 w-full" /></div>
-                    <div className="space-y-2"><Skeleton className="h-4 w-16" /><Skeleton className="h-6 w-full" /></div>
-                  </div>
+                  <div className="space-y-2"><Skeleton className="h-4 w-1/4" /><Skeleton className="h-10 w-full" /></div>
                 </CardContent>
               </Card>
-              <Card className="lg:col-span-2">
-                <CardHeader><Skeleton className="h-6 w-40" /></CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2"><Skeleton className="h-4 w-20" /><Skeleton className="h-10 w-full" /></div>
-                    <div className="space-y-2"><Skeleton className="h-4 w-20" /><Skeleton className="h-10 w-full" /></div>
-                    <div className="space-y-2"><Skeleton className="h-4 w-16" /><Skeleton className="h-10 w-full" /></div>
-                    <div className="space-y-2"><Skeleton className="h-4 w-16" /><Skeleton className="h-10 w-full" /></div>
-                  </div>
-                  <div className="flex justify-end"><Skeleton className="h-10 w-32" /></div>
+              <Card>
+                <CardHeader><Skeleton className="h-6 w-1/3" /></CardHeader>
+                <CardContent className="space-y-4">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
                 </CardContent>
               </Card>
             </div>
-            <Card>
-              <CardHeader><Skeleton className="h-6 w-40" /></CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2"><Skeleton className="h-4 w-32" /><Skeleton className="h-10 w-full" /></div>
-                  <div className="space-y-2"><Skeleton className="h-4 w-32" /><Skeleton className="h-10 w-full" /></div>
-                </div>
-                <div className="flex justify-end"><Skeleton className="h-10 w-32" /></div>
-              </CardContent>
-            </Card>
-          </div>
+        </div>
       </DashboardLayout>
     );
   }
@@ -283,80 +318,83 @@ export default function ProfilePage() {
               <p className="text-muted-foreground">Manage your account information and preferences</p>
             </div>
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader><CardTitle>Profile Picture</CardTitle></CardHeader>
-              <CardContent className="text-center space-y-4">
-                <Avatar className="h-32 w-32 mx-auto">
-                  <AvatarImage src={user.avatar} alt={`${user.firstName} ${user.lastName}`} />
-                  <AvatarFallback className="text-2xl">{user.firstName[0]}{user.lastName[0]}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <input type="file" accept="image/*" onChange={handleProfilePictureUpload} className="hidden" id="profile-picture-upload" />
-                  <Label htmlFor="profile-picture-upload" className="cursor-pointer">
-                    <Button variant="outline" className="flex items-center gap-2" asChild>
-                      <span><Camera className="h-4 w-4" />Change Picture</span>
-                    </Button>
-                  </Label>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="lg:col-span-2">
+          <div className="space-y-6">
+            <Card className={cn("enhanced-card transition-all duration-300", editing && "border-paypal-primary/50 bg-paypal-primary/5")}>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Basic Information</CardTitle>
+                  <div>
+                    <CardTitle>Personal Information</CardTitle>
+                    <CardDescription>Update your personal details here.</CardDescription>
+                  </div>
                   <Button variant="outline" size="sm" onClick={() => setEditing(!editing)} className="flex items-center gap-2">
                     <Edit className="h-4 w-4" />{editing ? "Cancel" : "Edit"}
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input id="firstName" value={editing ? editForm.firstName : user.firstName} onChange={(e) => setEditForm(prev => ({ ...prev, firstName: e.target.value }))} disabled={!editing} />
+              <CardContent>
+                {editing ? (
+                  <div className="space-y-4 animate-fade-in">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="firstName">First Name</Label>
+                        <Input id="firstName" value={editForm.firstName} onChange={(e) => setEditForm(prev => ({ ...prev, firstName: e.target.value }))} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="lastName">Last Name</Label>
+                        <Input id="lastName" value={editForm.lastName} onChange={(e) => setEditForm(prev => ({ ...prev, lastName: e.target.value }))} />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email Address</Label>
+                      <Input id="email" type="email" value={user.email} disabled />
+                    </div>
+                    <div className="flex gap-2 pt-4">
+                      <Button onClick={handleSaveProfile} className="flex items-center gap-2"><Save className="h-4 w-4" />Save Changes</Button>
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input id="lastName" value={editing ? editForm.lastName : user.lastName} onChange={(e) => setEditForm(prev => ({ ...prev, lastName: e.target.value }))} disabled={!editing} />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input id="email" type="email" value={editing ? editForm.email : user.email} onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))} disabled={!editing} />
-                </div>
-                {editing && (
-                  <div className="flex gap-2 pt-4">
-                    <Button onClick={handleSaveProfile} className="flex items-center gap-2"><Save className="h-4 w-4" />Save Changes</Button>
-                    <Button variant="outline" onClick={() => setEditing(false)}>Cancel</Button>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>First Name</Label>
+                        <p className="text-md text-muted-foreground p-2">{user.firstName}</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Last Name</Label>
+                        <p className="text-md text-muted-foreground p-2">{user.lastName}</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Email Address</Label>
+                      <p className="text-md text-muted-foreground p-2">{user.email}</p>
+                    </div>
                   </div>
                 )}
               </CardContent>
             </Card>
-          </div>
-          <Card>
+          <Card className="enhanced-card">
             <CardHeader><CardTitle className="flex items-center gap-2"><Lock className="h-5 w-5" />Security Settings</CardTitle></CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-medium">Password</h3>
-                    <p className="text-sm text-muted-foreground">It's a good idea to use a strong password that you're not using elsewhere.</p>
+                    <h3 className="font-medium">Account Password</h3>
+                    <p className="text-sm text-muted-foreground">Change the password you use to log in.</p>
                   </div>
                   <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
                     <DialogTrigger asChild><Button variant="outline">Change Password</Button></DialogTrigger>
                     <DialogContent>
-                      <DialogHeader><DialogTitle>Change Password</DialogTitle><DialogDescription>Enter your current password and choose a new one.</DialogDescription></DialogHeader>
+                      <DialogHeader><DialogTitle>Change Login Password</DialogTitle><DialogDescription>Enter your current password and choose a new one.</DialogDescription></DialogHeader>
                       <div className="space-y-4">
-                        <div>
+                        <div className="space-y-2">
                           <Label htmlFor="currentPassword">Current Password</Label>
                           <Input id="currentPassword" type="password" value={passwordForm.currentPassword} onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))} />
                         </div>
-                        <div>
+                        <div className="space-y-2">
                           <Label htmlFor="newPassword">New Password</Label>
                           <Input id="newPassword" type="password" value={passwordForm.newPassword} onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))} />
                         </div>
-                        <div>
+                        <div className="space-y-2">
                           <Label htmlFor="confirmPassword">Confirm New Password</Label>
                           <Input id="confirmPassword" type="password" value={passwordForm.confirmPassword} onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))} />
                         </div>
@@ -369,10 +407,41 @@ export default function ProfilePage() {
                   </Dialog>
                 </div>
                 <Separator />
+                 <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium">Transaction Password</h3>
+                    <p className="text-sm text-muted-foreground">Set or change the password used to authorize transactions.</p>
+                  </div>
+                  <Dialog open={showTxnPasswordModal} onOpenChange={setShowTxnPasswordModal}>
+                    <DialogTrigger asChild><Button variant="outline">Change Password</Button></DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader><DialogTitle>Change Transaction Password</DialogTitle><DialogDescription>This password is used to authorize payments and transfers.</DialogDescription></DialogHeader>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="currentPasswordTxn">Current Account Password</Label>
+                          <Input id="currentPasswordTxn" type="password" value={txnPasswordForm.currentPassword} onChange={(e) => setTxnPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="newTxnPassword">New Transaction Password</Label>
+                          <Input id="newTxnPassword" type="password" value={txnPasswordForm.newTxnPassword} onChange={(e) => setTxnPasswordForm(prev => ({ ...prev, newTxnPassword: e.target.value }))} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="confirmTxnPassword">Confirm New Password</Label>
+                          <Input id="confirmTxnPassword" type="password" value={txnPasswordForm.confirmTxnPassword} onChange={(e) => setTxnPasswordForm(prev => ({ ...prev, confirmTxnPassword: e.target.value }))} />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowTxnPasswordModal(false)}>Cancel</Button>
+                        <Button onClick={handleChangeTxnPassword} disabled={!txnPasswordForm.currentPassword || !txnPasswordForm.newTxnPassword || !txnPasswordForm.confirmTxnPassword}>Set Password</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+                <Separator />
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-medium text-destructive">Delete Account</h3>
-                    <p className="text-sm text-muted-foreground">Permanently delete your account and all associated data. This action cannot be undone.</p>
+                    <p className="text-sm text-muted-foreground">Permanently delete your account and all associated data.</p>
                   </div>
                   <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
                     <DialogTrigger asChild><Button variant="destructive"><Trash2 className="h-4 w-4 mr-2" />Delete Account</Button></DialogTrigger>
@@ -388,6 +457,7 @@ export default function ProfilePage() {
               </div>
             </CardContent>
           </Card>
+            </div>
         </div>
       </div>
     </DashboardLayout>
