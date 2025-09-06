@@ -1,4 +1,4 @@
-# render.yaml - FINAL CORRECTED VERSION (v2)
+# render.yaml - FINAL CORRECTED VERSION v3
 
 databases:
   - name: payclone-db
@@ -10,7 +10,6 @@ services:
   # 1. Service Discovery (Eureka)
   - type: web
     name: service-discovery
-    runtime: java
     rootDir: backend/service-discovery
     buildCommand: "./mvnw clean package -Dmaven.test.skip=true"
     startCommand: "java -jar target/*.jar"
@@ -22,7 +21,6 @@ services:
   # 2. User Service
   - type: web
     name: user-service
-    runtime: java
     rootDir: backend/user-service
     buildCommand: "./mvnw clean package -Dmaven.test.skip=true"
     startCommand: "java -jar target/*.jar"
@@ -42,7 +40,6 @@ services:
   # 3. Wallet Service
   - type: web
     name: wallet-service
-    runtime: java
     rootDir: backend/wallet-service
     buildCommand: "./mvnw clean package -Dmaven.test.skip=true"
     startCommand: "java -jar target/*.jar"
@@ -62,7 +59,6 @@ services:
   # 4. Transaction Service
   - type: web
     name: transaction-service
-    runtime: java
     rootDir: backend/transaction-service
     buildCommand: "./mvnw clean package -Dmaven.test.skip=true"
     startCommand: "java -jar target/*.jar"
@@ -82,7 +78,6 @@ services:
   # 5. Notification Service
   - type: web
     name: notification-service
-    runtime: java
     rootDir: backend/notification-service
     buildCommand: "./mvnw clean package -Dmaven.test.skip=true"
     startCommand: "java -jar target/*.jar"
@@ -96,7 +91,6 @@ services:
   # 6. API Gateway
   - type: web
     name: api-gateway
-    runtime: java
     rootDir: backend/api-gateway
     buildCommand: "./mvnw clean package -Dmaven.test.skip=true"
     startCommand: "java -jar target/*.jar"
